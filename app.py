@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template
 import yfinance as yf
 from sklearn.linear_model import LinearRegression
 import pandas as pd
+import numpy as np
 
 app = Flask(__name__)
 
@@ -11,16 +12,15 @@ def index():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json()
-    ticker = data['ticker']
-    stock_data = yf.download(ticker, start='2010-01-01', end='2020-01-01')
-    stock_data['Returns'] = stock_data['Adj Close'].pct_change()
-    stock_data['MA10'] = stock_data['Adj Close'].rolling(window=10).mean()
-    stock_data['MA50'] = stock_data['Adj Close'].rolling(window=50).mean()
-    stock_data = stock_data.dropna()
+    ticker = request.form['ticker']
+    data = yf.download(ticker, start='2010-01-01', end='2020-01-01')
+    data['Returns'] = data['Adj Close'].pct_change()
+    data['MA10'] = data['Adj Close'].rolling(window=10).mean()
+    data['MA50'] = data['Adj Close'].rolling(window=50).mean()
+    data = data.dropna()
 
-    features = stock_data[['MA10', 'MA50', 'Returns']]
-    target = stock_data['Adj Close']
+    features = data[['MA10', 'MA50', 'Returns']]
+    target = data['Adj Close']
 
     model = LinearRegression()
     model.fit(features[:-1], target[:-1])
